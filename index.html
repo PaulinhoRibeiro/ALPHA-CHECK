@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Checklist Alpha Garage</title>
-    
-    <!-- CORRIGIDO: html2canvas + jsPDF separados -->
+    <title>Checklist Alpha Garage - 3D</title>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+
     <style>
         :root {
             --bg-color: #121212;
             --panel-bg: #1e1e1e;
             --text-color: #e0e0e0;
-            --accent-color: #c62828; 
+            --accent-color: #c62828;
             --border-color: #444;
         }
 
@@ -45,21 +53,17 @@
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%) rotate(-40deg);
-            font-size: 120px;
-            font-weight: 900;
+            font-size: 120px; font-weight: 900;
             color: rgba(198, 40, 40, 0.05);
-            font-style: italic;
-            letter-spacing: 20px;
-            pointer-events: none;
-            z-index: 0;
-            white-space: nowrap;
-            user-select: none;
+            font-style: italic; letter-spacing: 20px;
+            pointer-events: none; z-index: 0;
+            white-space: nowrap; user-select: none;
         }
 
         .container > *:not(.watermark-text) { position: relative; z-index: 1; }
 
-        header { 
-            display: flex; justify-content: space-between; align-items: center; 
+        header {
+            display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 20px; padding-bottom: 15px;
             border-bottom: 2px solid var(--border-color);
             flex-wrap: wrap; gap: 15px;
@@ -69,8 +73,8 @@
         .logo-text { font-size: 24px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
         .logo-text span { font-style: italic; font-weight: 400; font-size: 14px; display: block; letter-spacing: 4px; color: #aaa; }
 
-        .info-header { 
-            display: flex; flex-direction: column; gap: 5px; align-items: center; 
+        .info-header {
+            display: flex; flex-direction: column; gap: 5px; align-items: center;
             background: #0a0a0a; padding: 10px 20px; border-radius: 8px; border: 1px solid var(--accent-color);
         }
         .os-num { font-size: 18px; font-weight: 900; color: var(--accent-color); letter-spacing: 1px; }
@@ -80,7 +84,6 @@
         .btn-top { padding: 10px 15px; font-size: 14px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; cursor: pointer; font-weight: bold;}
         .btn-top:hover { background: #444; }
         .btn-danger { background: var(--accent-color); border-color: var(--accent-color); }
-        .btn-top select { background: transparent; color: white; border: none; font-size: 14px; font-weight: bold; padding: 0; cursor: pointer; outline: none; }
 
         .status-obrigatorio {
             display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -119,10 +122,10 @@
         .teste-obrigatorio-box { background: #151515; border-radius: 8px; padding: 15px; border: 2px solid #333; transition: 0.3s; }
         .teste-obrigatorio-box.completo { border-color: #4CAF50; }
         .teste-obrigatorio-box.pendente { border-color: #ff5252; }
-        
+
         .radio-group { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-        .radio-group label { 
-            display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; 
+        .radio-group label {
+            display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer;
             background: #0a0a0a; padding: 10px 15px; border-radius: 6px; border: 2px solid #333; transition: 0.2s; flex: 1; min-width: 130px; justify-content: center; font-weight: bold;
         }
         .radio-group label:hover { border-color: var(--accent-color); }
@@ -141,30 +144,146 @@
         .foto-teste .slot-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; z-index: 1; background: #000;}
         .foto-teste .slot-remove { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: rgba(198, 40, 40, 0.9); color: white; border: none; cursor: pointer; font-weight: bold; z-index: 3; display: none; font-size: 16px;}
 
-        .mapa-container { background: #151515; border-radius: 8px; border: 1px solid #333; padding: 20px; }
-        .toolbar-mapa { display: flex; justify-content: center; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;}
-        .btn-tool { padding: 12px 18px; border-radius: 8px; border: 2px solid #555; background: #222; color: white; font-size: 15px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;}
-        .btn-tool.ativo { border-color: #fff; transform: scale(1.05); box-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        .btn-tool-1 { color: #64B5F6; }
-        .btn-tool-2 { color: #FFF176; }
-        .btn-tool-3 { color: #E0E0E0; }
-        .btn-tool-limpar { background: #333; color: #ff8a80; border-color: #555; font-size: 13px;}
+        .viewer-3d-container {
+            width: 100%;
+            height: 520px;
+            background: #0a0a0a;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            overflow: hidden;
+            position: relative;
+        }
+        #viewer3d {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: crosshair;
+        }
+        #viewer3d canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        #viewer3d-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0,0,0,0.7);
+            color: #aaa;
+            z-index: 5;
+            font-size: 14px;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #333;
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .abas-container { display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;}
-        .aba-btn { padding: 10px 15px; background: #222; color: #aaa; border: 1px solid #444; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s;}
-        .aba-btn.ativa { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
-        .btn-zoom { background: #222; color: #fff; border: 1px solid #444; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 16px; margin-left: 10px;}
-        .btn-zoom.ativo { background: #3498db; border-color: #3498db; }
+        .toolbar-3d {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            align-items: center;
+        }
+        .btn-tool-3d {
+            padding: 10px 16px;
+            border-radius: 6px;
+            border: 2px solid #555;
+            background: #222;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .btn-tool-3d:hover { background: #2e2e2e; }
+        .btn-tool-3d.ativo {
+            border-color: #fff;
+            transform: scale(1.03);
+            box-shadow: 0 0 12px rgba(255,255,255,0.25);
+        }
+        .btn-tool-3d.tipo-1 { border-left: 5px solid #1976D2; }
+        .btn-tool-3d.tipo-2 { border-left: 5px solid #FBC02D; }
+        .btn-tool-3d.tipo-3 { border-left: 5px solid #212121; }
+        .btn-tool-3d.btn-limpar-3d {
+            background: #2a1a1a;
+            color: #ff8a80;
+            border-color: #c62828;
+            margin-left: auto;
+        }
 
-        .view-scroll { width: 100%; overflow: auto; max-height: 500px; background: #0a0a0a; border-radius: 8px; border: 2px dashed #444; }
-        .view-container { position: relative; width: 100%; touch-action: none; transition: width 0.3s; }
-        .view-container.zoom-2x { width: 200%; }
-        .view-imagem { width: 100%; height: auto; display: block; pointer-events: none; user-select: none; }
-        
-        .pin { position: absolute; width: 24px; height: 24px; border-radius: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.5); border: 2px solid #fff; z-index: 10;}
-        .pin-1 { background-color: #1976D2; color: #fff; }
-        .pin-2 { background-color: #FBC02D; color: #000; }
-        .pin-3 { background-color: #212121; color: #fff; }
+        .cameras-3d {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .btn-cam {
+            padding: 7px 12px;
+            background: #222;
+            color: #aaa;
+            border: 1px solid #444;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn-cam:hover { background: #333; color: white; border-color: #666; }
+
+        .viewer-3d-hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 8px;
+            text-align: center;
+        }
+        .legenda-danos {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        .legenda-danos span { display: flex; align-items: center; gap: 5px; }
+        .legenda-danos .dot {
+            width: 12px; height: 12px; border-radius: 50%; display: inline-block;
+        }
+
+        #toast-3d {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #2e7d32;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        #toast-3d.visivel {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        #toast-3d.erro { background: #c62828; }
 
         .galeria-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
         .foto-slot { position: relative; background: #151515; border: 2px dashed #444; border-radius: 8px; aspect-ratio: 1; display: flex; flex-direction: column; overflow: hidden; transition: 0.2s;}
@@ -229,13 +348,7 @@
         .compact-print .form-group label { font-size: 6px !important; margin-bottom: 0 !important; color: #555 !important; }
         .compact-print input[type="text"], .compact-print input[type="number"], .compact-print input[type="date"], .compact-print input[type="time"], .compact-print textarea, .compact-print select { padding: 1px 3px !important; font-size: 7px !important; border: 1px solid #999 !important; background: #fff !important; color: #000 !important; min-height: 0 !important; height: auto !important; border-radius: 2px !important; }
         .compact-print textarea { height: 14px !important; min-height: 14px !important; resize: none !important; overflow: hidden !important; }
-        .compact-print .mapa-container { padding: 1mm !important; background: #fff !important; border: 1px solid #ccc !important; display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 1mm !important; align-items: start !important; }
-        .compact-print .view-wrapper { display: block !important; margin: 0 !important; padding: 0 !important; min-width: 0 !important; overflow: hidden !important; page-break-inside: avoid !important; }
-        .compact-print .view-scroll { border: none !important; background: transparent !important; overflow: visible !important; max-height: none !important; }
-        .compact-print .view-container { width: 100% !important; touch-action: auto !important; }
-        .compact-print .view-imagem { width: 100% !important; height: auto !important; display: block !important; }
-        .compact-print #view-teto .view-imagem { max-height: 50mm !important; width: auto !important; max-width: 100% !important; margin: 0 auto !important; }
-        .compact-print .pin { width: 10px !important; height: 10px !important; font-size: 6px !important; border: 1px solid #000 !important; background: #fff !important; color: #000 !important; box-shadow: none !important; font-weight: bold !important; }
+        .compact-print .viewer-3d-container, .compact-print .toolbar-3d, .compact-print .cameras-3d, .compact-print .viewer-3d-hint, .compact-print .legenda-danos { display: none !important; }
         .compact-print .galeria-fotos { grid-template-columns: repeat(6, 1fr) !important; gap: 1mm !important; }
         .compact-print .foto-slot { height: 38px !important; aspect-ratio: auto !important; border: 1px solid #999 !important; border-radius: 2px !important; }
         .compact-print .foto-slot label { padding: 1px !important; }
@@ -273,12 +386,11 @@
         .compact-print .btn-clear { display: none !important; }
         .compact-print #textoDeclaracao { font-size: 6px !important; padding: 3px 6px !important; margin-top: 3px !important; line-height: 1.2 !important; background: #f0f0f0 !important; border-left: 2px solid #c62828 !important; color: #000 !important; }
         .compact-print .actions, .compact-print .btn-tool, .compact-print .toolbar-mapa, .compact-print .abas-container, .compact-print .btn-zoom { display: none !important; }
-        .compact-print .section-title, .compact-print .foto-slot, .compact-print .view-wrapper, .compact-print .sig-box, .compact-print .teste-obrigatorio-box { page-break-inside: avoid; }
 
         @media print {
             @page { size: A4 portrait; margin: 3mm; }
             body { background: white !important; background-image: none !important; color: black !important; padding: 0 !important; margin: 0 !important; }
-            .actions, .btn-top, .btn-tool, .toolbar-mapa, .abas-container, .btn-zoom, .btn-clear, .slot-remove, .modal, .status-obrigatorio, .header-actions { display: none !important; }
+            .actions, .btn-top, .btn-tool, .toolbar-mapa, .abas-container, .btn-zoom, .btn-clear, .slot-remove, .modal, .status-obrigatorio, .header-actions, .viewer-3d-container, .toolbar-3d, .cameras-3d, .viewer-3d-hint, .legenda-danos, #toast-3d { display: none !important; }
         }
 
         @media (max-width: 768px) {
@@ -289,6 +401,7 @@
             header { flex-direction: column; align-items: stretch; }
             .info-header { align-items: flex-start; }
             .radio-group label { min-width: 100px; font-size: 13px; padding: 8px 10px; }
+            .viewer-3d-container { height: 380px; }
         }
     </style>
 </head>
@@ -296,7 +409,7 @@
 
     <div class="container" id="area-pdf">
         <div class="watermark-text">ALPHA GARAGE</div>
-        
+
         <header>
             <div class="logo-mock">
                 <div class="logo-alpha">α</div>
@@ -353,111 +466,44 @@
             <div class="section-title">Queixas do Cliente</div>
             <textarea id="queixas" rows="3" placeholder="O que o cliente relatou?" oninput="salvarDados()"></textarea>
 
-            <div class="section-title">Mapa de Avarias</div>
-            
-            <div class="toolbar-mapa">
-                <button type="button" class="btn-tool btn-tool-1 ativo" id="tool-1" onclick="selecionarFerramenta(1)">🟦 1 - Risco</button>
-                <button type="button" class="btn-tool btn-tool-2" id="tool-2" onclick="selecionarFerramenta(2)">🟨 2 - Amassado</button>
-                <button type="button" class="btn-tool btn-tool-3" id="tool-3" onclick="selecionarFerramenta(3)">⬛ 3 - Quebrado</button>
-                <button type="button" class="btn-tool btn-tool-limpar" onclick="limparMapa()">🗑️ Limpar</button>
+            <div class="section-title">Mapa de Avarias 3D</div>
+            <div class="viewer-3d-container">
+                <div id="viewer3d">
+                    <div id="viewer3d-loading">
+                        <div class="spinner"></div>
+                        <div>Carregando modelo 3D...</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="abas-container">
-                <button type="button" class="aba-btn ativa" onclick="mudarAba('lat_esq', this)">Lateral Esq.</button>
-                <button type="button" class="aba-btn" onclick="mudarAba('lat_dir', this)">Lateral Dir.</button>
-                <button type="button" class="aba-btn" onclick="mudarAba('frente', this)">Frente</button>
-                <button type="button" class="aba-btn" onclick="mudarAba('tras', this)">Trás</button>
-                <button type="button" class="aba-btn" onclick="mudarAba('teto', this)">Teto</button>
-                <button type="button" class="btn-zoom" id="btn-zoom" onclick="toggleZoom()">🔍</button>
+            <div class="toolbar-3d">
+                <button type="button" class="btn-tool-3d tipo-1 ativo" data-tipo="1" onclick="selecionarFerramenta3D(1)">🟦 Risco</button>
+                <button type="button" class="btn-tool-3d tipo-2" data-tipo="2" onclick="selecionarFerramenta3D(2)">🟨 Amassado</button>
+                <button type="button" class="btn-tool-3d tipo-3" data-tipo="3" onclick="selecionarFerramenta3D(3)">⬛ Quebrado</button>
+                <button type="button" class="btn-tool-3d btn-limpar-3d" onclick="limparTodosDanos3D()">🗑️ Limpar Marcações</button>
             </div>
 
-            <div class="mapa-container">
-                <div id="view-lat_esq" class="view-wrapper">
-                    <div class="view-scroll">
-                        <div class="view-container" onclick="adicionarPino(event, 'lat_esq')">
-                            <svg class="view-imagem" viewBox="0 0 600 250" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M 50 160 L 550 160 C 570 160 580 150 580 130 L 580 110 C 580 90 560 80 540 80 L 440 80 L 380 30 L 180 30 L 120 80 L 40 90 C 20 90 10 100 10 120 L 10 140 C 10 155 20 160 50 160 Z" fill="#c62828" stroke="#000" stroke-width="3"/>
-                                <path d="M 130 80 L 170 40 L 250 40 L 250 80 Z" fill="#111" stroke="#555" stroke-width="2"/>
-                                <path d="M 260 80 L 260 40 L 360 40 L 400 80 Z" fill="#111" stroke="#555" stroke-width="2"/>
-                                <circle cx="150" cy="160" r="35" fill="#111" stroke="#666" stroke-width="5"/>
-                                <circle cx="450" cy="160" r="35" fill="#111" stroke="#666" stroke-width="5"/>
-                                <rect x="10" y="120" width="30" height="20" fill="#555" rx="5"/>
-                                <rect x="540" y="100" width="30" height="20" fill="#f1c40f" rx="5"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+            <div class="cameras-3d">
+                <button type="button" class="btn-cam" onclick="setCameraView('perspective')">🔭 Perspectiva</button>
+                <button type="button" class="btn-cam" onclick="setCameraView('front')">⬆️ Frente</button>
+                <button type="button" class="btn-cam" onclick="setCameraView('back')">⬇️ Trás</button>
+                <button type="button" class="btn-cam" onclick="setCameraView('left')">⬅️ Esquerda</button>
+                <button type="button" class="btn-cam" onclick="setCameraView('right')">➡️ Direita</button>
+                <button type="button" class="btn-cam" onclick="setCameraView('top')">🔝 Topo</button>
+            </div>
 
-                <div id="view-lat_dir" class="view-wrapper" style="display:none;">
-                    <div class="view-scroll">
-                        <div class="view-container" onclick="adicionarPino(event, 'lat_dir')">
-                            <svg class="view-imagem" viewBox="0 0 600 250" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M 550 160 L 50 160 C 30 160 20 150 20 130 L 20 110 C 20 90 40 80 60 80 L 160 80 L 220 30 L 420 30 L 480 80 L 560 90 C 580 90 590 100 590 120 L 590 140 C 590 155 580 160 550 160 Z" fill="#c62828" stroke="#000" stroke-width="3"/>
-                                <path d="M 470 80 L 430 40 L 350 40 L 350 80 Z" fill="#111" stroke="#555" stroke-width="2"/>
-                                <path d="M 340 80 L 340 40 L 240 40 L 200 80 Z" fill="#111" stroke="#555" stroke-width="2"/>
-                                <circle cx="450" cy="160" r="35" fill="#111" stroke="#666" stroke-width="5"/>
-                                <circle cx="150" cy="160" r="35" fill="#111" stroke="#666" stroke-width="5"/>
-                                <rect x="560" y="120" width="30" height="20" fill="#555" rx="5"/>
-                                <rect x="30" y="100" width="30" height="20" fill="#f1c40f" rx="5"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="view-frente" class="view-wrapper" style="display:none;">
-                    <div class="view-scroll">
-                        <div class="view-container" onclick="adicionarPino(event, 'frente')">
-                            <svg class="view-imagem" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M 50 200 L 350 200 C 370 200 380 190 380 170 L 380 120 C 380 90 350 70 320 70 L 80 70 C 50 70 20 90 20 120 L 20 170 C 20 190 30 200 50 200 Z" fill="#c62828" stroke="#000" stroke-width="3"/>
-                                <rect x="60" y="80" width="60" height="40" fill="#f1c40f" rx="5"/>
-                                <rect x="280" y="80" width="60" height="40" fill="#f1c40f" rx="5"/>
-                                <rect x="140" y="90" width="120" height="40" fill="#111" rx="5" stroke="#555" stroke-width="2"/>
-                                <rect x="50" y="220" width="60" height="20" fill="#555" rx="5"/>
-                                <rect x="290" y="220" width="60" height="20" fill="#555" rx="5"/>
-                                <circle cx="90" cy="240" r="35" fill="#111" stroke="#666" stroke-width="5"/>
-                                <circle cx="310" cy="240" r="35" fill="#111" stroke="#666" stroke-width="5"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="view-tras" class="view-wrapper" style="display:none;">
-                    <div class="view-scroll">
-                        <div class="view-container" onclick="adicionarPino(event, 'tras')">
-                            <svg class="view-imagem" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M 50 200 L 350 200 C 370 200 380 190 380 170 L 380 120 C 380 90 350 70 320 70 L 80 70 C 50 70 20 90 20 120 L 20 170 C 20 190 30 200 50 200 Z" fill="#c62828" stroke="#000" stroke-width="3"/>
-                                <rect x="60" y="80" width="60" height="40" fill="#c62828" rx="5"/>
-                                <rect x="280" y="80" width="60" height="40" fill="#c62828" rx="5"/>
-                                <rect x="120" y="90" width="160" height="80" fill="#111" rx="5" stroke="#555" stroke-width="2"/>
-                                <rect x="50" y="220" width="60" height="20" fill="#555" rx="5"/>
-                                <rect x="290" y="220" width="60" height="20" fill="#555" rx="5"/>
-                                <circle cx="90" cy="240" r="35" fill="#111" stroke="#666" stroke-width="5"/>
-                                <circle cx="310" cy="240" r="35" fill="#111" stroke="#666" stroke-width="5"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="view-teto" class="view-wrapper" style="display:none;">
-                    <div class="view-scroll">
-                        <div class="view-container" onclick="adicionarPino(event, 'teto')">
-                            <svg class="view-imagem" viewBox="0 0 250 500" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M 30 150 L 30 400 C 30 450 50 480 80 480 L 170 480 C 200 480 220 450 220 400 L 220 150 C 220 100 200 70 170 70 L 80 70 C 50 70 30 100 30 150 Z" fill="#c62828" stroke="#000" stroke-width="3"/>
-                                <path d="M 50 100 L 200 100 L 200 150 L 50 150 Z" fill="#111" stroke="#555" stroke-width="2"/>
-                                <path d="M 50 350 L 200 350 L 200 400 L 50 400 Z" fill="#111" stroke="#555" stroke-width="2"/>
-                                <rect x="10" y="180" width="20" height="40" fill="#555" rx="5"/>
-                                <rect x="220" y="180" width="20" height="40" fill="#555" rx="5"/>
-                                <rect x="10" y="300" width="20" height="40" fill="#555" rx="5"/>
-                                <rect x="220" y="300" width="20" height="40" fill="#555" rx="5"/>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
+            <p class="viewer-3d-hint">
+                🖱️ <strong>Arraste</strong> para girar • <strong>Clique</strong> para marcar dano • <strong>Clique num dano</strong> para remover
+            </p>
+            <div class="legenda-danos">
+                <span><span class="dot" style="background:#1976D2;"></span> Risco</span>
+                <span><span class="dot" style="background:#FBC02D;"></span> Amassado</span>
+                <span><span class="dot" style="background:#212121; border: 1px solid #555;"></span> Quebrado</span>
             </div>
 
             <div class="form-group" style="margin-top: 15px;">
                 <label>Resumo das Avarias (Automático)</label>
-                <textarea id="avarias" rows="2" placeholder="As marcações aparecerão aqui..." oninput="salvarDados()"></textarea>
+                <textarea id="avarias" rows="2" placeholder="As marcações 3D aparecerão aqui..." oninput="salvarDados()"></textarea>
             </div>
 
             <div class="section-title">Fotos da Vistoria (6 fotos)</div>
@@ -623,9 +669,38 @@
         </div>
     </div>
 
-    <script>
-        let appState = { os: '', ferramenta: 1, aba: 'lat_esq', zoom: false, marcadores: [], fotos: {} };
+    <div id="toast-3d">Marcação adicionada!</div>
 
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DecalGeometry } from 'three/addons/geometries/DecalGeometry.js';
+
+        // ---------- ESTADO GLOBAL ----------
+        let appState = { os: '', fotos: {} };
+        let scene, camera, renderer, controls, raycaster;
+        let carModel = null;
+        let decalMeshes = [];
+        let ferramentaAtual = 1;
+        let container3d = null;
+        const texturasDano = {};
+
+        // ============================================================
+        // TOAST DE FEEDBACK
+        // ============================================================
+        function mostrarToast(mensagem, erro = false) {
+            const toast = document.getElementById('toast-3d');
+            toast.textContent = mensagem;
+            toast.classList.toggle('erro', erro);
+            toast.classList.add('visivel');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('visivel'), 2200);
+        }
+
+        // ============================================================
+        // PERSISTÊNCIA
+        // ============================================================
         function gerarNovaOS() {
             const data = new Date();
             const ymd = data.getFullYear() + String(data.getMonth()+1).padStart(2,'0') + String(data.getDate()).padStart(2,'0');
@@ -660,34 +735,34 @@
             const lblBSim = document.getElementById('lbl-bateria-sim');
             const lblBNao = document.getElementById('lbl-bateria-nao');
             const bateriaOK = s.bateriaSim && s.fotoBateria;
-            
+
             boxBateria.classList.toggle('completo', bateriaOK);
             boxBateria.classList.toggle('pendente', !bateriaOK);
             tituloBateria.classList.toggle('completo', bateriaOK);
             lblBSim.classList.toggle('selecionado-sim', s.bateriaSim);
             lblBNao.classList.toggle('selecionado-nao', !s.bateriaSim && document.querySelector('input[name="teste_bateria"][value="Não"]').checked);
-            
+
             const boxScanner = document.getElementById('box-scanner');
             const tituloScanner = document.getElementById('titulo-scanner');
             const lblSSim = document.getElementById('lbl-scanner-sim');
             const lblSNao = document.getElementById('lbl-scanner-nao');
             const scannerOK = s.scannerSim && s.fotoScanner;
-            
+
             boxScanner.classList.toggle('completo', scannerOK);
             boxScanner.classList.toggle('pendente', !scannerOK);
             tituloScanner.classList.toggle('completo', scannerOK);
             lblSSim.classList.toggle('selecionado-sim', s.scannerSim);
             lblSNao.classList.toggle('selecionado-nao', !s.scannerSim && document.querySelector('input[name="scanner"][value="Não"]').checked);
-            
+
             const statusBar = document.getElementById('status-obrigatorio');
             const statusBateria = document.getElementById('status-item-bateria');
             const statusScanner = document.getElementById('status-item-scanner');
-            
+
             statusBateria.innerHTML = bateriaOK ? '✅ Teste de Bateria' : '⏳ Teste de Bateria';
             statusBateria.className = 'status-item ' + (bateriaOK ? 'ok' : 'falta');
             statusScanner.innerHTML = scannerOK ? '✅ Scanner' : '⏳ Scanner';
             statusScanner.className = 'status-item ' + (scannerOK ? 'ok' : 'falta');
-            
+
             if (s.ok) {
                 statusBar.classList.remove('pendente');
                 statusBar.classList.add('completo');
@@ -697,12 +772,12 @@
                 statusBar.classList.add('pendente');
                 statusBar.querySelector('span').innerHTML = '⚠️ <strong>Status dos testes obrigatórios:</strong>';
             }
-            
+
             document.getElementById('btn-imprimir').classList.toggle('bloqueado', !s.ok);
             document.getElementById('btn-pdf').classList.toggle('bloqueado', !s.ok);
             const btnWpp = document.getElementById('btn-wpp');
             if (btnWpp) btnWpp.classList.toggle('bloqueado', !s.ok);
-            
+
             salvarDados();
         }
 
@@ -718,106 +793,9 @@
             return false;
         }
 
-        function mudarAba(viewId, btn) {
-            appState.aba = viewId;
-            document.querySelectorAll('.view-wrapper').forEach(el => el.style.display = 'none');
-            document.getElementById('view-' + viewId).style.display = 'block';
-            document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('ativa'));
-            btn.classList.add('ativa');
-            document.querySelectorAll('.view-container').forEach(c => c.classList.remove('zoom-2x'));
-            document.getElementById('btn-zoom').classList.remove('ativo');
-            appState.zoom = false;
-        }
-
-        function toggleZoom() {
-            const container = document.querySelector('#view-' + appState.aba + ' .view-container');
-            if (!container) return;
-            container.classList.toggle('zoom-2x');
-            document.getElementById('btn-zoom').classList.toggle('ativo');
-            appState.zoom = container.classList.contains('zoom-2x');
-        }
-
-        function selecionarFerramenta(codigo) {
-            appState.ferramenta = codigo;
-            document.querySelectorAll('.btn-tool').forEach(btn => btn.classList.remove('ativo'));
-            document.getElementById('tool-' + codigo).classList.add('ativo');
-        }
-
-        function adicionarPino(event, view) {
-            if (event.target.classList.contains('pin')) return;
-            const container = event.currentTarget;
-            const rect = container.getBoundingClientRect();
-            const x = ((event.clientX - rect.left) / rect.width) * 100;
-            const y = ((event.clientY - rect.top) / rect.height) * 100;
-            const id = 'pin_' + Date.now() + Math.random().toString(36).substr(2, 5);
-            const pinData = { id, view, x, y, codigo: appState.ferramenta };
-            appState.marcadores.push(pinData);
-            criarPinoVisual(pinData, container);
-            atualizarTextoAvarias();
-            salvarDados();
-        }
-
-        function criarPinoVisual(data, container) {
-            const pin = document.createElement('div');
-            pin.id = data.id;
-            pin.className = `pin pin-${data.codigo}`;
-            pin.style.left = data.x + '%';
-            pin.style.top = data.y + '%';
-            pin.innerText = data.codigo;
-            pin.onclick = function(e) {
-                e.stopPropagation();
-                this.remove();
-                appState.marcadores = appState.marcadores.filter(m => m.id !== data.id);
-                atualizarTextoAvarias();
-                salvarDados();
-            };
-            container.appendChild(pin);
-        }
-
-        function limparMapa() {
-            if(confirm("Apagar todas as marcações do mapa?")) {
-                document.querySelectorAll('.pin').forEach(p => p.remove());
-                appState.marcadores = [];
-                atualizarTextoAvarias();
-                salvarDados();
-            }
-        }
-
-        function atualizarTextoAvarias() {
-            let riscos = [], amassados = [], quebrados = [];
-            const nomesViews = { lat_esq: "Lat. Esq.", lat_dir: "Lat. Dir.", frente: "Frente", tras: "Trás", teto: "Teto" };
-            appState.marcadores.forEach(m => {
-                let texto = nomesViews[m.view];
-                if (m.codigo === 1) riscos.push(texto);
-                if (m.codigo === 2) amassados.push(texto);
-                if (m.codigo === 3) quebrados.push(texto);
-            });
-            let resultado = [];
-            if (riscos.length > 0) resultado.push(`Riscos (${[...new Set(riscos)].join(', ')})`);
-            if (amassados.length > 0) resultado.push(`Amassados (${[...new Set(amassados)].join(', ')})`);
-            if (quebrados.length > 0) resultado.push(`Quebrados (${[...new Set(quebrados)].join(', ')})`);
-            document.getElementById('avarias').value = resultado.join(' | ');
-        }
-
-        function validarPlaca() {
-            const input = document.getElementById('placa');
-            const v = input.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
-            input.value = v;
-            const raw = v.replace(/-/g, '');
-            const isValida = /^[A-Z]{3}\d{4}$/.test(raw) || /^[A-Z]{3}\d[A-Z]\d{2}$/.test(raw);
-            if (raw.length === 7 && !isValida) input.classList.add('invalid');
-            else input.classList.remove('invalid');
-            salvarDados();
-        }
-
-        function formatarPlaca() {
-            const input = document.getElementById('placa');
-            const raw = input.value.replace(/[^A-Z0-9]/g, '');
-            if (/^[A-Z]{3}\d{4}$/.test(raw)) input.value = raw.slice(0,3) + '-' + raw.slice(3);
-            else input.value = raw;
-            salvarDados();
-        }
-
+        // ============================================================
+        // FOTOS
+        // ============================================================
         function adicionarFoto(event, slot) {
             const file = event.target.files[0];
             if (!file) return;
@@ -878,6 +856,9 @@
             try { localStorage.setItem('alpha_fotos', JSON.stringify(appState.fotos)); } catch(e) {}
         }
 
+        // ============================================================
+        // FORMULÁRIO
+        // ============================================================
         function toggleLuzes() {
             const radios = document.getElementsByName('luz_painel');
             let isSim = false;
@@ -912,6 +893,28 @@
             salvarDados();
         }
 
+        function validarPlaca() {
+            const input = document.getElementById('placa');
+            const v = input.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+            input.value = v;
+            const raw = v.replace(/-/g, '');
+            const isValida = /^[A-Z]{3}\d{4}$/.test(raw) || /^[A-Z]{3}\d[A-Z]\d{2}$/.test(raw);
+            if (raw.length === 7 && !isValida) input.classList.add('invalid');
+            else input.classList.remove('invalid');
+            salvarDados();
+        }
+
+        function formatarPlaca() {
+            const input = document.getElementById('placa');
+            const raw = input.value.replace(/[^A-Z0-9]/g, '');
+            if (/^[A-Z]{3}\d{4}$/.test(raw)) input.value = raw.slice(0,3) + '-' + raw.slice(3);
+            else input.value = raw;
+            salvarDados();
+        }
+
+        // ============================================================
+        // SALVAR / CARREGAR DADOS
+        // ============================================================
         function salvarDados() {
             try {
                 const dados = {
@@ -924,7 +927,7 @@
                     queixas: document.getElementById('queixas').value, avarias: document.getElementById('avarias').value,
                     qual_luz: document.getElementById('qual_luz').value, obs: document.getElementById('observacoes').value,
                     combustivel: document.getElementById('combustivel').value, tipo: document.getElementById('tipoChecklist').value,
-                    via: document.getElementById('viaSelect').value, marcadores: appState.marcadores,
+                    via: document.getElementById('viaSelect').value,
                     checkboxes: {}, radios: {}
                 };
                 document.querySelectorAll('.acc').forEach(cb => dados.checkboxes[cb.id] = cb.checked);
@@ -945,17 +948,11 @@
                     const dados = JSON.parse(salvo);
                     if (dados.os) { appState.os = dados.os; atualizarDisplayOS(); }
                     for (let key in dados) {
-                        if (key === 'marcadores') {
-                            appState.marcadores = dados[key] || [];
-                            appState.marcadores.forEach(m => {
-                                const container = document.querySelector(`#view-${m.view} .view-container`);
-                                if (container) criarPinoVisual(m, container);
-                            });
-                        } else if (key === 'checkboxes') {
+                        if (key === 'checkboxes') {
                             for (let id in dados.checkboxes) { let el = document.getElementById(id); if (el) el.checked = dados.checkboxes[id]; }
                         } else if (key === 'radios') {
                             for (let name in dados.radios) { let el = document.querySelector(`input[name="${name}"][value="${dados.radios[name]}"]`); if(el) el.checked = true; }
-                        } else if (dados[key] !== undefined && dados[key] !== null && !['os','marcadores','checkboxes','radios'].includes(key)) {
+                        } else if (dados[key] !== undefined && dados[key] !== null && !['os','checkboxes','radios'].includes(key)) {
                             let el = document.getElementById(key); if (el) el.value = dados[key];
                         }
                     }
@@ -988,17 +985,28 @@
             } catch(e) { console.log('Erro ao carregar:', e); }
         }
 
+        // ============================================================
+        // NOVO ATENDIMENTO / HISTÓRICO
+        // ============================================================
         function novoAtendimento() {
             if (!confirm("Criar novo atendimento?\nO checklist atual será salvo no histórico.")) return;
             salvarNoHistorico();
             localStorage.removeItem('alpha_checklist');
             localStorage.removeItem('alpha_fotos');
+            localStorage.removeItem('alpha_danos_3d');
             localStorage.removeItem('alpha_sig_sigCliente');
             localStorage.removeItem('alpha_sig_sigResponsavel');
             localStorage.removeItem('alpha_os_current');
-            appState.marcadores = []; appState.fotos = {};
+            appState.fotos = {};
+
+            decalMeshes.forEach(m => {
+                scene.remove(m);
+                if (m.geometry) m.geometry.dispose();
+                if (m.material) m.material.dispose();
+            });
+            decalMeshes = [];
+
             document.getElementById('formChecklist').reset();
-            document.querySelectorAll('.pin').forEach(p => p.remove());
             document.querySelectorAll('.slot-img').forEach(img => { img.src = ''; img.style.display = 'none'; });
             document.querySelectorAll('.foto-slot, .foto-teste').forEach(s => {
                 s.classList.remove('tem-foto');
@@ -1011,9 +1019,10 @@
             preencherDataHoraEntrada();
             document.getElementById('combustivel').value = 50;
             document.getElementById('combustivel_val').innerText = '50%';
-            mudarModo(); selecionarFerramenta(1);
-            mudarAba('lat_esq', document.querySelector('.aba-btn'));
+            mudarModo();
             atualizarStatusTestes();
+            atualizarResumoAvarias();
+            render();
             alert('✅ Novo atendimento criado!\nO.S.: ' + appState.os);
         }
 
@@ -1053,6 +1062,9 @@
 
         function fecharHistorico() { document.getElementById('modalHistorico').style.display = 'none'; }
 
+        // ============================================================
+        // ASSINATURAS
+        // ============================================================
         function configurarCanvas(id) {
             const canvas = document.getElementById(id);
             const ctx = canvas.getContext('2d');
@@ -1087,6 +1099,9 @@
             localStorage.removeItem('alpha_sig_' + id);
         }
 
+        // ============================================================
+        // IMPRESSÃO / PDF
+        // ============================================================
         function prepararParaImpressao() {
             document.body.classList.add('compact-print');
             ['sigCliente', 'sigResponsavel'].forEach(id => {
@@ -1291,7 +1306,7 @@ ${document.getElementById('data_saida').value ? 'Saída: ' + document.getElement
 *QUEIXAS DO CLIENTE:*
 ${document.getElementById('queixas').value || 'Nenhuma'}
 
-*AVARIAS:* ${document.getElementById('avarias').value || 'Nenhuma apontada'}
+*AVARIAS (3D):* ${document.getElementById('avarias').value || 'Nenhuma apontada'}
 *Luz no Painel:* ${document.querySelector('input[name="luz_painel"]:checked').value} ${document.getElementById('qual_luz').value ? '- ' + document.getElementById('qual_luz').value : ''}
 
 *ACESSÓRIOS:* ${acessorios.length > 0 ? acessorios.join(', ') : 'Nenhum'}
@@ -1320,6 +1335,449 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
             }
         }
 
+        // ============================================================
+        // VISUALIZADOR 3D — THREE.JS + DECALGEOMETRY
+        // ============================================================
+
+        function criarTexturaDano(tipo) {
+            const size = 256;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, size, size);
+
+            if (tipo === 1) {
+                ctx.strokeStyle = '#1976D2';
+                ctx.lineWidth = 8;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = 'rgba(25, 118, 210, 0.9)';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.moveTo(30, 120);
+                ctx.bezierCurveTo(80, 90, 130, 140, 180, 110);
+                ctx.bezierCurveTo(200, 100, 215, 105, 225, 115);
+                ctx.stroke();
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(40, 140);
+                ctx.bezierCurveTo(100, 130, 150, 155, 210, 135);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(50, 100);
+                ctx.lineTo(150, 115);
+                ctx.stroke();
+            } else if (tipo === 2) {
+                const grad = ctx.createRadialGradient(size/2, size/2, 20, size/2, size/2, size/2 - 10);
+                grad.addColorStop(0, 'rgba(251, 192, 45, 0.9)');
+                grad.addColorStop(0.4, 'rgba(251, 192, 45, 0.65)');
+                grad.addColorStop(0.7, 'rgba(230, 126, 34, 0.45)');
+                grad.addColorStop(1, 'rgba(230, 126, 34, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(size/2, size/2, size/2 - 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(size/2, size/2 - 20, size/2 - 50, 0.3, Math.PI - 0.3);
+                ctx.stroke();
+            } else {
+                ctx.strokeStyle = '#212121';
+                ctx.lineWidth = 10;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.moveTo(60, 60);
+                ctx.lineTo(196, 196);
+                ctx.moveTo(196, 60);
+                ctx.lineTo(60, 196);
+                ctx.stroke();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(65, 65);
+                ctx.lineTo(190, 190);
+                ctx.stroke();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function initTexturas() {
+            texturasDano[1] = criarTexturaDano(1);
+            texturasDano[2] = criarTexturaDano(2);
+            texturasDano[3] = criarTexturaDano(3);
+        }
+
+        function render() {
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        function initThree() {
+            container3d = document.getElementById('viewer3d');
+            const w = container3d.clientWidth;
+            const h = container3d.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0a);
+
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            container3d.appendChild(renderer.domElement);
+            const loadingDiv = document.getElementById('viewer3d-loading');
+            if (loadingDiv) container3d.removeChild(loadingDiv);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.08;
+            controls.minDistance = 2;
+            controls.maxDistance = 20;
+            controls.addEventListener('change', render);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+            const dir1 = new THREE.DirectionalLight(0xffffff, 1.4);
+            dir1.position.set(5, 10, 7);
+            scene.add(dir1);
+            const dir2 = new THREE.DirectionalLight(0xffffff, 0.6);
+            dir2.position.set(-5, 5, -7);
+            scene.add(dir2);
+
+            raycaster = new THREE.Raycaster();
+
+            initTexturas();
+            carregarModelo();
+            setupInteracao();
+
+            window.addEventListener('resize', onResize);
+        }
+
+        function onResize() {
+            if (!container3d || !renderer || !camera) return;
+            const w = container3d.clientWidth;
+            const h = container3d.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            render();
+        }
+
+        function carregarModelo() {
+            const loader = new GLTFLoader();
+            const url = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CarConcept/glTF-Binary/CarConcept.glb';
+
+            loader.load(url, (gltf) => {
+                carModel = gltf.scene;
+
+                const box = new THREE.Box3().setFromObject(carModel);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                carModel.position.sub(center);
+
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 4 / maxDim;
+                carModel.scale.setScalar(scale);
+                carModel.updateMatrixWorld(true);
+
+                scene.add(carModel);
+                fitCamera();
+                restaurarDanos();
+                render();
+                console.log('✅ Modelo 3D carregado');
+            }, undefined, (err) => {
+                console.error('❌ Erro ao carregar modelo 3D:', err);
+                if (container3d) {
+                    container3d.innerHTML = `
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#ff8a80;padding:20px;text-align:center;">
+                            <p>⚠️ Não foi possível carregar o modelo 3D.</p>
+                            <p style="font-size:12px;color:#888;">Verifique sua conexão ou o console (F12).</p>
+                            <button onclick="location.reload()" style="padding:10px 20px;background:#c62828;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;margin-top:10px;">Tentar novamente</button>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function fitCamera() {
+            if (!carModel) return;
+            const box = new THREE.Box3().setFromObject(carModel);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            // ✅ ALTERADO: era 1.33, agora 1.05 → carro ~27% maior na tela inicial
+            const distance = maxDim * 1.05;
+            camera.position.set(center.x + distance * 0.7, center.y + distance * 0.55, center.z + distance * 0.7);
+            camera.lookAt(center);
+            controls.target.copy(center);
+            controls.update();
+            render();
+        }
+
+        function setupInteracao() {
+            const mouse = new THREE.Vector2();
+            let downX = 0, downY = 0, downT = 0;
+
+            renderer.domElement.addEventListener('pointerdown', (e) => {
+                downX = e.clientX;
+                downY = e.clientY;
+                downT = Date.now();
+            });
+
+            renderer.domElement.addEventListener('pointerup', (e) => {
+                const dx = e.clientX - downX;
+                const dy = e.clientY - downY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const elapsed = Date.now() - downT;
+                if (dist < 8 && elapsed < 500) {
+                    handleClick(e, mouse);
+                }
+            });
+        }
+
+        function handleClick(event, mouse) {
+            if (!carModel) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            const hitsDecal = raycaster.intersectObjects(decalMeshes, false);
+            if (hitsDecal.length > 0) {
+                if (confirm('Remover esta marcação?')) {
+                    removerDano(hitsDecal[0].object);
+                }
+                return;
+            }
+
+            const hits = raycaster.intersectObject(carModel, true);
+            if (hits.length === 0) return;
+            const hit = hits[0];
+            if (!hit.face) return;
+
+            const normalMatrix = new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld);
+            const worldNormal = hit.face.normal.clone().applyMatrix3(normalMatrix).normalize();
+
+            adicionarDano(hit.object, hit.point.clone(), worldNormal, ferramentaAtual);
+        }
+
+        function adicionarDano(mesh, point, normal, tipo) {
+            if (!mesh) return;
+
+            const quat = new THREE.Quaternion();
+            quat.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal.clone().normalize());
+            const euler = new THREE.Euler().setFromQuaternion(quat);
+
+            const box = new THREE.Box3().setFromObject(carModel);
+            const size = box.getSize(new THREE.Vector3());
+            const carMax = Math.max(size.x, size.y, size.z);
+            const base = carMax * 0.06;
+
+            let decalSize;
+            if (tipo === 1) {
+                decalSize = new THREE.Vector3(base * 1.4, base * 0.5, base);
+            } else {
+                decalSize = new THREE.Vector3(base, base, base);
+            }
+
+            const geom = new DecalGeometry(mesh, point, euler, decalSize);
+            const mat = new THREE.MeshBasicMaterial({
+                map: texturasDano[tipo],
+                transparent: true,
+                depthTest: true,
+                depthWrite: false,
+                polygonOffset: true,
+                polygonOffsetFactor: -10,
+                opacity: 0.95
+            });
+            const decalMesh = new THREE.Mesh(geom, mat);
+            decalMesh.userData.tipo = tipo;
+            decalMesh.userData.position = point.clone();
+            decalMesh.userData.normal = normal.clone();
+            decalMesh.userData.orientation = { x: euler.x, y: euler.y, z: euler.z };
+            decalMesh.userData.size = { x: decalSize.x, y: decalSize.y, z: decalSize.z };
+
+            scene.add(decalMesh);
+            decalMeshes.push(decalMesh);
+
+            render();
+            salvarDanos3D();
+            atualizarResumoAvarias();
+
+            const nomes = { 1: 'Risco', 2: 'Amassado', 3: 'Quebrado' };
+            mostrarToast('✅ ' + nomes[tipo] + ' marcado no veículo!');
+            console.log('📌 Dano adicionado:', tipo, point);
+        }
+
+        function removerDano(mesh) {
+            const idx = decalMeshes.indexOf(mesh);
+            if (idx > -1) {
+                decalMeshes.splice(idx, 1);
+                scene.remove(mesh);
+                if (mesh.geometry) mesh.geometry.dispose();
+                if (mesh.material) mesh.material.dispose();
+                render();
+                salvarDanos3D();
+                atualizarResumoAvarias();
+                mostrarToast('🗑️ Marcação removida');
+            }
+        }
+
+        function limparTodosDanos3D() {
+            if (decalMeshes.length === 0) return;
+            if (!confirm('Remover todas as marcações 3D?')) return;
+            decalMeshes.forEach(m => {
+                scene.remove(m);
+                if (m.geometry) m.geometry.dispose();
+                if (m.material) m.material.dispose();
+            });
+            decalMeshes = [];
+            render();
+            salvarDanos3D();
+            atualizarResumoAvarias();
+            mostrarToast('🗑️ Todas as marcações foram removidas');
+        }
+
+        function salvarDanos3D() {
+            const dados = decalMeshes.map(m => ({
+                tipo: m.userData.tipo,
+                position: { x: m.userData.position.x, y: m.userData.position.y, z: m.userData.position.z },
+                normal: { x: m.userData.normal.x, y: m.userData.normal.y, z: m.userData.normal.z },
+                orientation: m.userData.orientation,
+                size: m.userData.size
+            }));
+            try { localStorage.setItem('alpha_danos_3d', JSON.stringify(dados)); } catch(e) {}
+        }
+
+        function restaurarDanos() {
+            if (!carModel) return;
+            let dados = [];
+            try {
+                const saved = localStorage.getItem('alpha_danos_3d');
+                if (!saved) return;
+                dados = JSON.parse(saved);
+            } catch(e) { return; }
+
+            dados.forEach(d => {
+                const point = new THREE.Vector3(d.position.x, d.position.y, d.position.z);
+                const normal = new THREE.Vector3(d.normal.x, d.normal.y, d.normal.z);
+                const euler = new THREE.Euler(d.orientation.x, d.orientation.y, d.orientation.z);
+                const size = new THREE.Vector3(d.size.x, d.size.y, d.size.z);
+
+                const origin = point.clone().add(normal.clone().multiplyScalar(0.2));
+                raycaster.set(origin, normal.clone().negate());
+                const hits = raycaster.intersectObject(carModel, true);
+                if (hits.length === 0) return;
+                const hit = hits[0];
+                if (!hit.face) return;
+
+                const geom = new DecalGeometry(hit.object, point, euler, size);
+                const mat = new THREE.MeshBasicMaterial({
+                    map: texturasDano[d.tipo],
+                    transparent: true,
+                    depthTest: true,
+                    depthWrite: false,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -10,
+                    opacity: 0.95
+                });
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.userData.tipo = d.tipo;
+                mesh.userData.position = point.clone();
+                mesh.userData.normal = normal.clone();
+                mesh.userData.orientation = d.orientation;
+                mesh.userData.size = d.size;
+                scene.add(mesh);
+                decalMeshes.push(mesh);
+            });
+            render();
+            atualizarResumoAvarias();
+        }
+
+        function selecionarFerramenta3D(tipo) {
+            ferramentaAtual = tipo;
+            document.querySelectorAll('.btn-tool-3d[data-tipo]').forEach(btn => {
+                btn.classList.toggle('ativo', parseInt(btn.dataset.tipo) === tipo);
+            });
+            const nomes = { 1: '🟦 Risco', 2: '🟨 Amassado', 3: '⬛ Quebrado' };
+            mostrarToast(nomes[tipo] + ' selecionado. Clique no carro para marcar.');
+        }
+
+        function setCameraView(view) {
+            if (!carModel) return;
+            const box = new THREE.Box3().setFromObject(carModel);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            // ✅ ALTERADO: era 1.33, agora 1.05 → consistente com fitCamera
+            const dist = maxDim * 1.05;
+
+            switch (view) {
+                case 'front': camera.position.set(center.x, center.y, center.z + dist); break;
+                case 'back': camera.position.set(center.x, center.y, center.z - dist); break;
+                case 'left': camera.position.set(center.x - dist, center.y, center.z); break;
+                case 'right': camera.position.set(center.x + dist, center.y, center.z); break;
+                case 'top': camera.position.set(center.x, center.y + dist, center.z); break;
+                case 'perspective':
+                default:
+                    camera.position.set(center.x + dist * 0.7, center.y + dist * 0.55, center.z + dist * 0.7);
+            }
+            camera.lookAt(center);
+            controls.target.copy(center);
+            controls.update();
+            render();
+        }
+
+        function atualizarResumoAvarias() {
+            const cont = { 1: 0, 2: 0, 3: 0 };
+            decalMeshes.forEach(m => cont[m.userData.tipo] = (cont[m.userData.tipo] || 0) + 1);
+            const partes = [];
+            if (cont[1] > 0) partes.push(`${cont[1]} risco(s)`);
+            if (cont[2] > 0) partes.push(`${cont[2]} amassado(s)`);
+            if (cont[3] > 0) partes.push(`${cont[3]} quebrado(s)`);
+            document.getElementById('avarias').value = partes.join(' | ');
+            salvarDados();
+        }
+
+        // ============================================================
+        // EXPORTAR FUNÇÕES PARA O ESCOPO GLOBAL
+        // ============================================================
+        window.novoAtendimento = novoAtendimento;
+        window.abrirHistorico = abrirHistorico;
+        window.fecharHistorico = fecharHistorico;
+        window.toggleFullscreen = toggleFullscreen;
+        window.registrarSaida = registrarSaida;
+        window.mudarModo = mudarModo;
+        window.validarPlaca = validarPlaca;
+        window.formatarPlaca = formatarPlaca;
+        window.adicionarFoto = adicionarFoto;
+        window.removerFotoSlot = removerFotoSlot;
+        window.toggleLuzes = toggleLuzes;
+        window.atualizarStatusTestes = atualizarStatusTestes;
+        window.imprimir = imprimir;
+        window.gerarPDF = gerarPDF;
+        window.mostrarQR = mostrarQR;
+        window.fecharQR = fecharQR;
+        window.enviarWhatsApp = enviarWhatsApp;
+        window.enviarEmail = enviarEmail;
+        window.limparAssinatura = limparAssinatura;
+        window.salvarDados = salvarDados;
+        window.selecionarFerramenta3D = selecionarFerramenta3D;
+        window.setCameraView = setCameraView;
+        window.limparTodosDanos3D = limparTodosDanos3D;
+
+        // ============================================================
+        // INICIALIZAÇÃO
+        // ============================================================
         window.addEventListener('load', function() {
             configurarCanvas('sigCliente');
             configurarCanvas('sigResponsavel');
@@ -1328,8 +1786,9 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
             if (!localStorage.getItem('alpha_checklist')) preencherDataHoraEntrada();
             carregarDados();
             mudarModo();
-            selecionarFerramenta(1);
             atualizarStatusTestes();
+
+            setTimeout(initThree, 100);
         });
     </script>
 </body>
