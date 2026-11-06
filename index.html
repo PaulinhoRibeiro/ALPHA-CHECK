@@ -144,10 +144,13 @@
         .foto-teste .slot-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; display: none; z-index: 1; background: #000;}
         .foto-teste .slot-remove { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: rgba(198, 40, 40, 0.9); color: white; border: none; cursor: pointer; font-weight: bold; z-index: 3; display: none; font-size: 16px;}
 
+        /* ============================================================ */
+        /* VISUALIZADOR 3D — FUNDO BRANCO                               */
+        /* ============================================================ */
         .viewer-3d-container {
             width: 100%;
             height: 520px;
-            background: #0a0a0a;
+            background: #ffffff;
             border-radius: 8px;
             border: 2px solid var(--border-color);
             overflow: hidden;
@@ -158,6 +161,7 @@
             height: 100%;
             position: relative;
             cursor: crosshair;
+            background: #ffffff;
         }
         #viewer3d canvas {
             display: block;
@@ -172,14 +176,15 @@
             justify-content: center;
             flex-direction: column;
             gap: 10px;
-            background: rgba(0,0,0,0.7);
-            color: #aaa;
+            background: rgba(255,255,255,0.95);
+            color: #444;
             z-index: 5;
             font-size: 14px;
+            font-weight: bold;
         }
         .spinner {
             width: 40px; height: 40px;
-            border: 4px solid #333;
+            border: 4px solid #e0e0e0;
             border-top-color: var(--accent-color);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -223,9 +228,6 @@
             margin-left: auto;
         }
 
-        /* ============================================================ */
-        /* NOVO: SELETOR DE COR DO VEÍCULO                             */
-        /* ============================================================ */
         .color-picker-3d {
             display: flex;
             align-items: center;
@@ -515,7 +517,6 @@
                 <button type="button" class="btn-tool-3d tipo-2" data-tipo="2" onclick="selecionarFerramenta3D(2)">🟨 Amassado</button>
                 <button type="button" class="btn-tool-3d tipo-3" data-tipo="3" onclick="selecionarFerramenta3D(3)">⬛ Quebrado</button>
                 <button type="button" class="btn-tool-3d btn-limpar-3d" onclick="limparTodosDanos3D()">🗑️ Limpar Marcações</button>
-                <!-- NOVO: Seletor de cor do veículo -->
                 <div class="color-picker-3d">
                     <label for="corVeiculo3D">
                         🎨 Cor do veículo:
@@ -726,8 +727,9 @@
         let ferramentaAtual = 1;
         let container3d = null;
         const texturasDano = {};
-        let corVeiculoAtual = '#ffffff'; // BRANCO por padrão
-        const materiaisOriginais = []; // Guarda { mesh, mat, colorOriginal } para preservar vidros/pneus
+        let corVeiculoAtual = '#ffffff';
+        const materiaisOriginais = [];
+        let sombraChao = null;
 
         // ============================================================
         // TOAST DE FEEDBACK
@@ -1068,7 +1070,6 @@
             preencherDataHoraEntrada();
             document.getElementById('combustivel').value = 50;
             document.getElementById('combustivel_val').innerText = '50%';
-            // Reset cor para branco
             corVeiculoAtual = '#ffffff';
             document.getElementById('corVeiculo3D').value = '#ffffff';
             alterarCorVeiculo('#ffffff');
@@ -1479,7 +1480,10 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
             const h = container3d.clientHeight;
 
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0a0a);
+            // ==========================================
+            // ✅ FUNDO BRANCO
+            // ==========================================
+            scene.background = new THREE.Color(0xffffff);
 
             camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
 
@@ -1498,13 +1502,18 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
             controls.maxDistance = 20;
             controls.addEventListener('change', render);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-            const dir1 = new THREE.DirectionalLight(0xffffff, 1.4);
+            // Iluminação ajustada para fundo branco (menos intensa que no fundo escuro)
+            scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+            const dir1 = new THREE.DirectionalLight(0xffffff, 1.2);
             dir1.position.set(5, 10, 7);
             scene.add(dir1);
-            const dir2 = new THREE.DirectionalLight(0xffffff, 0.6);
+            const dir2 = new THREE.DirectionalLight(0xffffff, 0.5);
             dir2.position.set(-5, 5, -7);
             scene.add(dir2);
+            // Luz de preenchimento frontal para suavizar sombras no fundo claro
+            const dir3 = new THREE.DirectionalLight(0xffffff, 0.35);
+            dir3.position.set(0, 3, 10);
+            scene.add(dir3);
 
             raycaster = new THREE.Raycaster();
 
@@ -1544,15 +1553,12 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
 
                 scene.add(carModel);
 
-                // ==========================================
-                // ✅ Captura materiais originais + aplica cor branca
-                // ==========================================
+                // Captura materiais originais + aplica cor branca
                 materiaisOriginais.length = 0;
                 carModel.traverse((obj) => {
                     if (obj.isMesh && obj.material) {
                         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
                         mats.forEach(mat => {
-                            // Guarda referência e cor original
                             materiaisOriginais.push({
                                 mat,
                                 corOriginal: mat.color ? mat.color.clone() : null,
@@ -1562,8 +1568,10 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
                         });
                     }
                 });
-                // Aplica branco logo após carregar
                 aplicarCorCarro(corVeiculoAtual);
+
+                // ✅ Adiciona sombra suave no chão (para o carro não flutuar no fundo branco)
+                adicionarSombraChao();
 
                 fitCamera();
                 restaurarDanos();
@@ -1573,9 +1581,9 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
                 console.error('❌ Erro ao carregar modelo 3D:', err);
                 if (container3d) {
                     container3d.innerHTML = `
-                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#ff8a80;padding:20px;text-align:center;">
-                            <p>⚠️ Não foi possível carregar o modelo 3D.</p>
-                            <p style="font-size:12px;color:#888;">Verifique sua conexão ou o console (F12).</p>
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#c62828;padding:20px;text-align:center;background:rgba(255,255,255,0.95);">
+                            <p style="font-weight:bold;">⚠️ Não foi possível carregar o modelo 3D.</p>
+                            <p style="font-size:12px;color:#666;">Verifique sua conexão ou o console (F12).</p>
                             <button onclick="location.reload()" style="padding:10px 20px;background:#c62828;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:bold;margin-top:10px;">Tentar novamente</button>
                         </div>
                     `;
@@ -1584,7 +1592,58 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
         }
 
         // ============================================================
-        // ✅ NOVO: APLICAR COR AO CARRO (preserva vidros e pneus)
+        // ✅ NOVO: SOMBRA SUAVE NO CHÃO (para fundo branco)
+        // ============================================================
+        function adicionarSombraChao() {
+            if (!carModel) return;
+
+            // Remove sombra antiga se existir
+            if (sombraChao) {
+                scene.remove(sombraChao);
+                if (sombraChao.geometry) sombraChao.geometry.dispose();
+                if (sombraChao.material) sombraChao.material.dispose();
+            }
+
+            const box = new THREE.Box3().setFromObject(carModel);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const minY = box.min.y;
+            const maxHorizontal = Math.max(size.x, size.z);
+
+            // Canvas com gradiente radial → sombra suave e realista
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(256, 256, 30, 256, 256, 240);
+            grad.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+            grad.addColorStop(0.4, 'rgba(0, 0, 0, 0.22)');
+            grad.addColorStop(0.7, 'rgba(0, 0, 0, 0.08)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 512);
+
+            const textura = new THREE.CanvasTexture(canvas);
+            textura.colorSpace = THREE.SRGBColorSpace;
+            textura.needsUpdate = true;
+
+            const shadowSize = maxHorizontal * 1.5;
+            const geom = new THREE.PlaneGeometry(shadowSize, shadowSize);
+            const mat = new THREE.MeshBasicMaterial({
+                map: textura,
+                transparent: true,
+                depthWrite: false,
+                opacity: 0.85
+            });
+            sombraChao = new THREE.Mesh(geom, mat);
+            sombraChao.rotation.x = -Math.PI / 2;
+            sombraChao.position.set(center.x, minY - 0.02, center.z);
+            sombraChao.renderOrder = -1;
+            scene.add(sombraChao);
+        }
+
+        // ============================================================
+        // APLICAR COR AO CARRO (preserva vidros e pneus)
         // ============================================================
         function aplicarCorCarro(corHex) {
             if (!carModel) return;
@@ -1603,7 +1662,6 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
                     if (r < 0.15 && g < 0.15 && b < 0.15) return;
                 }
 
-                // Aplica a cor de lataria
                 mat.color.copy(cor);
                 mat.needsUpdate = true;
             });
@@ -1611,9 +1669,6 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
             render();
         }
 
-        // ============================================================
-        // ✅ NOVO: ALTERAR COR AO VIVO (chamado pelo input color)
-        // ============================================================
         function alterarCorVeiculo(corHex) {
             corVeiculoAtual = corHex;
             aplicarCorCarro(corHex);
@@ -1898,7 +1953,6 @@ _Via: ${document.getElementById('viaSelect').value.toUpperCase()}_
             atualizarDisplayOS();
             if (!localStorage.getItem('alpha_checklist')) preencherDataHoraEntrada();
             carregarDados();
-            // Garante que o input color mostre o valor salvo
             document.getElementById('corVeiculo3D').value = corVeiculoAtual;
             mudarModo();
             atualizarStatusTestes();
